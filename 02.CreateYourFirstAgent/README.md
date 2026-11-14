@@ -1,5 +1,7 @@
 # Build Your First AI Agent: The Automated Travel Planner
 
+> **Next exercise:** [Fine-tune and compare a travel model in Microsoft Foundry](./04b-finetune-model.md).
+
 The holidays are just around the corner, and the familiar feeling of wanderlust is setting in. Where should you go? What should you do? The planning can be as daunting as it is exciting. But what if you could delegate that initial spark of inspiration to a smart assistant?
 
 In this tutorial, we'll build exactly that: a personal AI travel agent. This agent will use the **Microsoft Agent Framework** to dream up a random vacation spot and instantly create a detailed day-trip itinerary for it. We'll use **GitHub Models** as our AI engine, providing a powerful yet accessible entry point into the world of AI agents.
