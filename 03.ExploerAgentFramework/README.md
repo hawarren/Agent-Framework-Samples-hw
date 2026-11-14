@@ -2,6 +2,8 @@
 
 The Agent Framework provides a unified interface for interacting with various AI models and services. This tutorial demonstrates how to connect to four different AI solutions—Azure OpenAI Service, GitHub Models, Azure AI Foundry, and Foundry Local—using the framework's implementations in both .NET (C\#) and Python.
 
+For a portal-to-code setup walkthrough, see [Studio 01: Prepare a Foundry project](./01-prepare-foundry-project.md).
+
 ## Configuration and Setup
 
 Before running any of the examples, you need to configure your environment variables. The framework uses these variables to connect to the different AI endpoints. Create a `.env` file in the root of your project and populate it with the necessary credentials and endpoints.
