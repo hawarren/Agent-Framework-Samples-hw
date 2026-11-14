@@ -70,6 +70,76 @@ This complements the separate tool-creation samples in this chapter: the agent a
 
 To avoid further charges, delete the project from **Settings > Delete project** in Foundry, or delete its resource group in the Azure portal. Deleting the project also removes the agent and its uploaded data.
 
+## Combined C# Responses API chat: web and file search
+
+This proof of concept follows the flow in [exercise 04a](https://github.com/hawarren/mslearn-ai-studio-hw/blob/b702dc2fd9f9411b5eb1f86b9259db6515cd9c48/Instructions/Exercises/04a-use-own-data.md), implemented as a C# console chat using the Responses API. It creates a vector store from a fictional sample brochure, waits for indexing, and makes both `web_search` and `file_search` available on every response. The previous response ID is passed to the next turn so a follow-up such as “What hotels does Margie's Travel offer there?” can use the destination established by the first turn.
+
+### Experiment with web search in the Foundry portal
+
+1. In [Microsoft Foundry](https://ai.azure.com), select a project and deploy `gpt-5.2` in a region that supports the Responses API and web search. If that model isn't available to your subscription, use a deployment that supports both Responses API tools.
+2. Open that deployment's model playground and set the instructions to: `You are a travel assistant that provides information on travel services available from Margie's Travel.`
+3. Ask `What are some recommended tourist activities in New York next month?` before enabling a tool. The answer is expected to be general rather than grounded in current search results.
+4. Add **web_search** under **Tools**, ask the same question again, and inspect the response and any citations/tool activity. It should use current public-web information when the tool is available.
+
+The exercise uses this portal experiment to demonstrate web grounding. The C# sample below provisions file search itself and combines it with web search in a single Responses API request.
+
+### Prerequisites and costs
+
+- An Azure subscription with permission and quota for a Microsoft Foundry project and a Responses API-compatible model deployment.
+- The .NET 10 SDK and Azure CLI, signed in to the same tenant as the project (`az login`).
+- A Foundry project with a deployment that supports both Responses API `web_search` and `file_search`. See [web search requirements](https://learn.microsoft.com/azure/foundry/openai/how-to/web-search) and [vector store guidance](https://learn.microsoft.com/azure/foundry/agents/concepts/vector-stores); availability and setup can vary by region and project configuration.
+- Requests can incur model inference and web-search charges. Uploading and indexing the brochure also creates billable storage/indexing resources. Review current regional pricing, quotas, and service terms before running; the sample creates a new file and vector store each time it starts.
+
+### Run the chat
+
+From the repository root, set the project endpoint from the Foundry project overview and the exact model deployment name:
+
+```bash
+export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+export FOUNDRY_MODEL="<deployment-name>"
+az login
+cd 04.Tools/code_samples/dotNET/msfoundry/06-dotnet-foundry-responses-web-file-search
+dotnet build
+dotnet run
+```
+
+In PowerShell, set `$env:FOUNDRY_PROJECT_ENDPOINT` and `$env:FOUNDRY_MODEL` instead of using `export`. The sample authenticates with `DefaultAzureCredential` (Azure CLI login is suitable for local development), uploads `data/margies-travel-brochure.md`, creates a vector store, and waits up to ten minutes for indexing to complete. It prints the uploaded file and vector store IDs to help with cleanup.
+
+Try the exercise's sequence:
+
+```text
+You: What's happening in New York next month?
+Assistant: [Current destination information from web search, with citations where available]
+You: What hotels does Margie's Travel offer there?
+Assistant: [Harborlight Hotel and Midtown Garden Inn, grounded in the fictional sample brochure]
+You: quit
+```
+
+The second prompt relies on the saved response ID. The hotel names and package details are fictional sample data, not real travel offers. Responses and citations depend on the deployed model and live service behavior. The conversation state lasts only for the current process; each new run creates another upload and vector store.
+
+Focused, offline tests for follow-up state and displayed response text can be run from the repository root:
+
+```bash
+dotnet test 04.Tools/code_samples/dotNET/msfoundry/06-dotnet-foundry-responses-web-file-search.Tests/06-dotnet-foundry-responses-web-file-search.Tests.csproj
+```
+
+### Parity mapping and limitations
+
+| Exercise outcome | This sample |
+| --- | --- |
+| Compare a response before and after web grounding in the portal | Portal playground steps above |
+| Upload documents and create a file-search index | Uploads the fictional Markdown brochure and waits for vector store indexing |
+| Combine current web information and private document search | Adds `web_search` and `file_search` to each Responses API request |
+| Ask a context-dependent follow-up | Passes `PreviousResponseId` between turns; covered by an offline test |
+| Chat until the user exits | Reads prompts until `quit` |
+| Avoid ongoing resource charges | Cleanup steps below |
+
+This is a C# adaptation using the Foundry **project endpoint** and `DefaultAzureCredential` rather than the exercise's Python sample and Azure OpenAI endpoint. The Foundry/OpenAI .NET Responses and vector-store SDK APIs used here are marked evaluation-only (`OPENAI001`) and may change. Local build and tests verify compilation and conversation state/output handling, not tool execution: no live Azure project, model, web search, or vector store was exercised during these checks. Run the chat with your own configured project to verify regional/model availability and the live expected outcomes before treating end-to-end parity as demonstrated.
+
+### Cleanup
+
+Delete the sample's vector store and uploaded file from the Foundry project after experimentation. The IDs are printed when the app runs. If you created a dedicated resource group for this exercise, deleting that resource group in the Azure portal also removes the project, deployment, agent data, and other resources in it; review its contents before confirming deletion.
+
 ## 1\. Vision - Using gpt-4o
 
 The Vision tool enables agents to interpret and understand the content of images. This is particularly useful for applications such as identifying objects in a picture, analyzing scenes, and providing contextual information based on visual input. The `gpt-4o` model is leveraged for its advanced multimodal capabilities.
