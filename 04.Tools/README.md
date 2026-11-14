@@ -63,12 +63,75 @@ In PowerShell, use `$env:FOUNDRY_PROJECT_ENDPOINT="..."` and `$env:FOUNDRY_AGENT
 | Enable built-in code interpreter | Attach `system_performance.csv` and request analysis or a chart |
 | Explore the saved agent in VS Code | Foundry Toolkit Agent Builder steps above |
 | Invoke the portal-created agent programmatically from C# | The `GetAgentAsync` and `RunAsync` calls in the linked sample |
+| Studio 06: explore default and custom guardrails | Follow the Foundry walkthrough below; portal behavior is documented, but live service verification is pending |
 
 This complements the separate tool-creation samples in this chapter: the agent and its tools are configured in the portal, and the sample only connects to and invokes it. The C# proof of concept prints response text; it does not download generated charts or other sandbox files to the local machine. The Foundry Agent Framework type currently emits the `OPENAI001` evaluation-only diagnostic and may change in a future release. Live service behavior depends on an accessible project, deployed model, configured agent, and available regional quota; no live Azure call is part of the build.
 
 ### Cleanup
 
 To avoid further charges, delete the project from **Settings > Delete project** in Foundry, or delete its resource group in the Azure portal. Deleting the project also removes the agent and its uploaded data.
+
+## Studio 06: Explore Foundry guardrails and content filtering
+
+This exercise follows [Apply guardrails to prevent the output of harmful content](https://github.com/hawarren/mslearn-ai-studio-hw/blob/b702dc2fd9f9411b5eb1f86b9259db6515cd9c48/Instructions/Exercises/06-Explore-content-filters.md). Allow about 25 minutes. Content filters can help mitigate harmful prompts and completions, but they are only one part of a responsible-AI approach.
+
+### Prerequisites and costs
+
+- An Azure subscription with permission to create a Microsoft Foundry project/resource and deploy a model, plus available model quota in a supported region.
+- Access to the Foundry portal. To run the C# example, install the .NET 10 SDK and Azure CLI, sign in with `az login`, and have a role that permits model inference.
+- Model deployments and inference may incur charges. Check current regional model pricing and quota before deploying; usage and costs vary by model and region. Delete the project/resource group when finished.
+- The exercise uses `gpt-5.2` as in the source lab. Catalog availability, deployment options, and portal labels can change; if it is unavailable in your region, use an available chat model and note the substitution.
+
+### Create a project and deploy a model
+
+1. Open [Microsoft Foundry](https://ai.azure.com), sign in, and enable **New Foundry** if prompted.
+2. Create a uniquely named project. Select your subscription, create or select a resource group, and choose a recommended region with model quota. Wait for the project home page to load.
+3. Open **Discover > Models**, find `gpt-5.2` (or the available chat-model substitute noted above), and deploy it using the default settings. When deployment completes, open its playground.
+
+### Explore the default guardrail
+
+1. In the model playground, compare the default guardrail's behavior with the exercise's bank-getaway-planning prompt, an offensive-joke prompt, and `What should I do if I cut myself?`. Do not treat a model's ordinary refusal or self-censoring as proof that a content filter blocked it.
+2. Use a safe support-seeking prompt such as `Where can I get help or support related to self-harm?` and record whether a response is returned. Responses can vary by model and policy; the default balanced guardrail may not block every probe.
+
+### Configure and apply custom controls
+
+1. Open **Guardrails** in the project navigation and select **Create**.
+2. Under **Add controls**, choose **Risk** and configure **Hate**, **Violence**, **Sexual**, and **Self-harm** with the highest blocking threshold offered by the portal. Add each control. If asked whether to replace an existing control, confirm.
+3. Select **Next**, choose **Models**, and apply the guardrail to the deployed model. Review the configuration, submit it, and wait for it to be saved.
+4. Open **Deployments**, select the model, and verify on its details page that the custom guardrail is attached. Retry the same probes in the playground and compare results with the default. The custom settings are stricter, but they may not change these particular responses: the model may already refuse them, and outcomes depend on the prompt, model, and current service behavior.
+
+### Handle filtered responses from C#
+
+The optional proof of concept at [`code_samples/dotNET/msfoundry/06-dotnet-foundry-guardrails`](./code_samples/dotNET/msfoundry/06-dotnet-foundry-guardrails/) calls the OpenAI-compatible Chat Completions endpoint for the deployed model. It reports a prompt blocked with `error.code: content_filter` (HTTP 400) and does not print a completion whose `finish_reason` is `content_filter` (HTTP 200). A normal model refusal is not necessarily a filter event. The sample is non-streaming; streaming clients must also stop displaying and remove or replace text if filtering is reported after partial output.
+
+Set the endpoint, deployment name, and a test prompt, then run:
+
+```bash
+export FOUNDRY_OPENAI_ENDPOINT="https://<resource>.openai.azure.com/openai/v1"
+export FOUNDRY_MODEL="<deployment-name>"
+export FOUNDRY_TEST_PROMPT="What should I do if I cut myself?"
+az login
+cd 04.Tools/code_samples/dotNET/msfoundry/06-dotnet-foundry-guardrails
+dotnet build
+dotnet run
+```
+
+In PowerShell, set the same values with `$env:FOUNDRY_OPENAI_ENDPOINT`, `$env:FOUNDRY_MODEL`, and `$env:FOUNDRY_TEST_PROMPT`. `DefaultAzureCredential` uses the signed-in Azure CLI account locally; the endpoint requires an appropriate model-inference role assignment. Check the returned filter signal in the console and compare it with the playground. This sample demonstrates response handling, not a complete safety system; validate outputs, provide appropriate user guidance, monitor behavior, and use additional responsible-AI controls for a real application.
+
+### Outcomes and verification status
+
+| Outcome | Status |
+| --- | --- |
+| Test a default model guardrail and compare a custom guardrail with it | Walkthrough documented; requires portal access to demonstrate live behavior |
+| Apply four highest-blocking risk controls to a model deployment and verify the association | Walkthrough documented; portal labels and available thresholds may vary |
+| Handle prompt- and completion-filtered responses in C# | Implemented and locally buildable; no live Azure inference was run in this environment |
+| Treat content filtering as one responsible-AI safeguard | Documented |
+
+Model catalog availability, portal workflows, policy thresholds, and filter outcomes are service-dependent and may change. The prompt examples may be refused by the model itself, and a stricter filter is not guaranteed to change every answer. The parity item remains pending until the portal steps and observed outcomes are demonstrated against an accessible Foundry deployment.
+
+### Cleanup
+
+Delete the resource group containing the project and model deployment in the Azure portal, or delete the project/resource from Foundry if that is how it was created. This removes the deployment and its associated resources and prevents further deployment charges.
 
 ## 1\. Vision - Using gpt-4o
 
