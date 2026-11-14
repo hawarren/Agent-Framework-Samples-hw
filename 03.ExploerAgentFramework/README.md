@@ -2,6 +2,58 @@
 
 The Agent Framework provides a unified interface for interacting with various AI models and services. This tutorial demonstrates how to connect to four different AI solutions—Azure OpenAI Service, GitHub Models, Azure AI Foundry, and Foundry Local—using the framework's implementations in both .NET (C\#) and Python.
 
+## Microsoft Foundry chat app with the OpenAI SDK
+
+This C# sample adapts the [Microsoft Learn exercise, “Create a generative AI chat app”](https://github.com/hawarren/mslearn-ai-studio-hw/blob/b702dc2fd9f9411b5eb1f86b9259db6515cd9c48/Instructions/Exercises/03-foundry-sdk.md), which uses Python. It connects directly to a Foundry model deployment through the Azure OpenAI-compatible OpenAI v1 endpoint; it does not use the Agent Framework.
+
+### Prerequisites and costs
+
+- An Azure subscription and Microsoft Foundry project with a deployed model that supports the Responses API. The source exercise uses `gpt-5.2`; model availability and regional quota can change.
+- .NET 10 SDK, Azure CLI, and an identity with permission to invoke the deployment. Visual Studio Code is optional.
+- Sign in with `az login` or another credential supported by `DefaultAzureCredential`.
+- Allow about 45 minutes for project and deployment setup. Inference is billed according to the deployment, region, and token usage; provisioned deployments may have additional ongoing costs. Check current Azure pricing and quota before deploying.
+
+### Configure, build, and run
+
+Set the endpoint to the Azure OpenAI resource endpoint shown in the Foundry project overview (the root URL, without `/openai/v1/`) and the exact model deployment name:
+
+```bash
+export AZURE_OPENAI_ENDPOINT="https://<resource-name>.openai.azure.com"
+export AZURE_OPENAI_CHAT_DEPLOYMENT_NAME="<deployment-name>"
+az login
+dotnet build 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat/05-foundry-responses-chat.csproj
+dotnet test 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat.tests/05-foundry-responses-chat.tests.csproj
+```
+
+In PowerShell, use `$env:AZURE_OPENAI_ENDPOINT="..."` and `$env:AZURE_OPENAI_CHAT_DEPLOYMENT_NAME="..."`. Run the following from the repository root; each command starts a separate interactive session and sends billable requests:
+
+```bash
+dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat -- --chat-completions
+dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat -- --responses
+dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat
+dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-foundry-responses-chat -- --async
+```
+
+At each `You:` prompt, enter a question; type `quit` to end the session. The first run uses Chat Completions, the second makes an untracked Responses call, the default run streams Responses text while tracking the completed response ID, and `--async` makes non-streaming asynchronous Responses calls while tracking the ID. In the tracked modes, follow an initial question with a contextual follow-up such as `How does it compare to modern LLMs?`; the follow-up is sent with the previous response ID. Streaming output appears incrementally.
+
+### Source-lesson parity and validation limits
+
+| Source lesson outcome | C# demonstration |
+| --- | --- |
+| Start with Chat Completions, then switch to Responses | `--chat-completions` and `--responses` show the two request styles |
+| Add conversation tracking | `--async` and the default streaming mode pass the previous completed response ID |
+| Stream partial output | Default mode prints text deltas and records the response ID only on completion |
+| Use the asynchronous API | `--async` awaits non-streaming Responses calls |
+| Test application state and output handling | The sibling test project covers response ID tracking/reset and delta output without Azure calls |
+
+The conversation ID is held in memory only and is lost when the process exits; the untracked modes intentionally do not preserve context. The Responses API in the pinned OpenAI .NET SDK is marked experimental, so the sample locally suppresses its `OPENAI001` warning. The build and tests require no Azure credentials, but they do not prove that a particular deployment or region is available. Live checks are opt-in via the run commands above; they were not run in this environment.
+
+### Cleanup
+
+To avoid further costs, delete the Foundry project or its Azure resource group after testing. Also remove any model deployment or related resources you no longer need.
+
+---
+
 ## Configuration and Setup
 
 Before running any of the examples, you need to configure your environment variables. The framework uses these variables to connect to the different AI endpoints. Create a `.env` file in the root of your project and populate it with the necessary credentials and endpoints.
