@@ -2,6 +2,74 @@
 
 The Agent Framework in Azure AI Foundry allows for the extension of an agent's capabilities through various tools. This tutorial will cover how to utilize the Vision, Code Interpreter, Bing Search, and File Search tools with both .NET and Python code samples.
 
+## Portal-created grounded agent with VS Code and C#
+
+This lesson combines the existing file-search and code-interpreter examples in a single agent created in the Microsoft Foundry portal. The portal owns the agent definition and its tool configuration; the C# client connects to that existing Prompt Agent by name.
+
+### Prerequisites and costs
+
+- An Azure subscription with permission and quota to create a Microsoft Foundry project and deploy a supported model.
+- Visual Studio Code with the **Foundry Toolkit** extension, the .NET 10 SDK, and Azure CLI.
+- Sign in to the same Azure tenant in the portal, VS Code, and Azure CLI (`az login`).
+- Allow approximately 45 minutes. Azure model inference, file search, and code interpreter usage may incur charges. Check current regional pricing and quota before creating resources; costs depend on the model, region, and usage.
+
+### Create and ground the agent in the portal
+
+1. Open [Microsoft Foundry](https://ai.azure.com), select **Start building**, and create a project in a region with model quota. Create an agent named `it-support-agent` using an available deployed model.
+2. Set its instructions to:
+
+   ```text
+   You are an IT Support Agent for Contoso Corporation.
+   You help employees with technical issues and IT policy questions.
+
+   Guidelines:
+   - Always be professional and helpful
+   - Use the IT policy documentation to answer questions accurately
+   - If you don't know the answer, admit it and suggest contacting IT support directly
+   - When creating tickets, collect all necessary information before proceeding
+   ```
+
+3. In **Tools**, add **File search** and **Code interpreter**. Upload [IT_Policy.txt](https://raw.githubusercontent.com/MicrosoftLearning/mslearn-ai-agents/main/Labfiles/01-build-agent-portal-and-vscode/IT_Policy.txt) for file search, then wait for indexing to complete.
+4. Add [system_performance.csv](https://raw.githubusercontent.com/MicrosoftLearning/mslearn-ai-agents/main/Labfiles/01-build-agent-portal-and-vscode/system_performance.csv) to the Code interpreter's files and save the agent.
+5. In the portal playground, try `What's the policy for password resets?` and `Analyze the system performance data and identify any periods where CPU usage exceeded 80%`. The first should use the policy grounding; the second should analyze the attached CSV. You can also ask for a chart of CPU usage over time.
+
+### Try the agent in VS Code
+
+Install **Foundry Toolkit** from the VS Code Extensions view, sign in, and use **Microsoft Foundry Resources > Set Default Project** to select the project. Expand **Prompt Agents**, open `it-support-agent`, and ask a policy question such as `What is the policy for reporting a lost or stolen device?`. The extension playground uses the same saved agent and grounding.
+
+### Run the C# client
+
+The sample at [`code_samples/dotNET/msfoundry/05-dotnet-agent-framework-msfoundry-portal-agent`](./code_samples/dotNET/msfoundry/05-dotnet-agent-framework-msfoundry-portal-agent/) retrieves the saved Prompt Agent by name; it does not create an agent or configure tools in code.
+
+Set the project endpoint from the Foundry project overview and the agent name in your shell:
+
+```bash
+export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+export FOUNDRY_AGENT_NAME="it-support-agent"
+az login
+cd 04.Tools/code_samples/dotNET/msfoundry/05-dotnet-agent-framework-msfoundry-portal-agent
+dotnet build
+dotnet run
+```
+
+In PowerShell, use `$env:FOUNDRY_PROJECT_ENDPOINT="..."` and `$env:FOUNDRY_AGENT_NAME="it-support-agent"` in place of `export`. The client uses `DefaultAzureCredential`; Azure CLI authentication is one supported local credential. Running the program sends billable requests to the configured agent. It prints a grounded password-reset answer and an analysis of the uploaded performance data. For more checks, ask the agent to create a chart in the portal or VS Code playground.
+
+### Learning outcomes and parity
+
+| Learning outcome | Demonstration |
+| --- | --- |
+| Create a Foundry project and Prompt Agent in the portal | Portal steps above |
+| Ground an agent with file search and policy data | Attach `IT_Policy.txt` and ask policy questions |
+| Enable built-in code interpreter | Attach `system_performance.csv` and request analysis or a chart |
+| Explore the saved agent in VS Code | Foundry Toolkit Agent Builder steps above |
+| Invoke the portal-created agent programmatically from C# | The `GetAgentAsync` and `RunAsync` calls in the linked sample |
+
+This complements the separate tool-creation samples in this chapter: the agent and its tools are configured in the portal, and the sample only connects to and invokes it. The C# proof of concept prints response text; it does not download generated charts or other sandbox files to the local machine. The Foundry Agent Framework type currently emits the `OPENAI001` evaluation-only diagnostic and may change in a future release. Live service behavior depends on an accessible project, deployed model, configured agent, and available regional quota; no live Azure call is part of the build.
+
+### Cleanup
+
+To avoid further charges, delete the project from **Settings > Delete project** in Foundry, or delete its resource group in the Azure portal. Deleting the project also removes the agent and its uploaded data.
+
 ## 1\. Vision - Using gpt-4o
 
 The Vision tool enables agents to interpret and understand the content of images. This is particularly useful for applications such as identifying objects in a picture, analyzing scenes, and providing contextual information based on visual input. The `gpt-4o` model is leveraged for its advanced multimodal capabilities.
