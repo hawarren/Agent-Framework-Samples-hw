@@ -13,12 +13,13 @@ public class InventoryMcpTests
         string projectPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "../../../../AgentMCP.Console/AgentMCP.Console.csproj"));
+        string configuration = Directory.GetParent(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))!.Name;
 
         await using var client = await McpClient.CreateAsync(new StdioClientTransport(new()
         {
             Name = "Inventory MCP test",
             Command = "dotnet",
-            Arguments = ["run", "--project", projectPath, "--no-build", "--", "--server"],
+            Arguments = ["run", "--project", projectPath, "--configuration", configuration, "--no-build", "--", "--server"],
             WorkingDirectory = Path.GetDirectoryName(projectPath)
         }));
 

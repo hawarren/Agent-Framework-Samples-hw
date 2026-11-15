@@ -23,7 +23,7 @@ Creating a model deployment and sending prompts to it can incur Azure charges; c
    az login
    ```
 
-   In PowerShell, set `$env:FOUNDRY_PROJECT_ENDPOINT` and `$env:FOUNDRY_MODEL` instead. Alternatively, copy `.env.examples` to `.env` and set the values; the sample does not load `.env` automatically.
+   In PowerShell, set `$env:FOUNDRY_PROJECT_ENDPOINT` and `$env:FOUNDRY_MODEL` instead. `.env.examples` lists the expected names; export the values in the same shell or configure them in your IDE because the sample does not load `.env` files.
 
 ## Run the remote Microsoft Learn MCP agent
 
