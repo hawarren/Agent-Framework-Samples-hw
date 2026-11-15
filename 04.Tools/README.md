@@ -131,7 +131,7 @@ Model catalog availability, portal workflows, policy thresholds, and filter outc
 
 ### Cleanup
 
-Delete the resource group containing the project and model deployment in the Azure portal, or delete the project/resource from Foundry if that is how it was created. This removes the deployment and its associated resources and prevents further deployment charges.
+Delete the model deployment created for this exercise from **Deployments**, then delete any lab-only Foundry project and resource. Alternatively, delete the resource group in the Azure portal if it is dedicated to this exercise. Deleting only the project does not remove model deployments owned by the parent Foundry resource. If you reused a resource group or Foundry resource, remove only the assets created for this exercise.
 
 ## 1\. Vision - Using gpt-4o
 
