@@ -18,7 +18,7 @@ string model = Environment.GetEnvironmentVariable("FOUNDRY_MODEL") ?? "gpt-4.1";
 
 var project = new AIProjectClient(new Uri(endpoint), new AzureCliCredential());
 #pragma warning disable OPENAI001
-var responses = project.GetProjectOpenAIClient((Azure.AI.Projects.OpenAI.ProjectOpenAIClientOptions?)null).GetProjectResponsesClient();
+var responses = project.GetProjectOpenAIClient((Azure.AI.Projects.OpenAI.ProjectOpenAIClientOptions?)null).GetProjectResponsesClientForModel(model);
 AIAgent agent = responses.AsAIAgent(
     model: model,
     name: "ExpenseClaimAgent",

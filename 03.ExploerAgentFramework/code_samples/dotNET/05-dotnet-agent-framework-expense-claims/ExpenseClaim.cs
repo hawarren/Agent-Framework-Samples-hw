@@ -17,7 +17,8 @@ public static class ExpenseClaim
             string[] fields = line.Split(',', StringSplitOptions.TrimEntries);
             if (fields.Length != 3 || fields.Any(string.IsNullOrWhiteSpace)
                 || !decimal.TryParse(fields[2], NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
-                    CultureInfo.InvariantCulture, out decimal amount))
+                    CultureInfo.InvariantCulture, out decimal amount)
+                || decimal.Round(amount, 2) != amount)
                 throw new FormatException($"Invalid expense row: {line}");
             total += amount;
             items.Add($"{fields[0]} - {fields[1]}: {amount.ToString("0.00", CultureInfo.InvariantCulture)}");

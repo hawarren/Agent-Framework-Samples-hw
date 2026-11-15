@@ -17,6 +17,12 @@ try
     throw new Exception("Invalid amount was accepted");
 }
 catch (FormatException) { }
+try
+{
+    ExpenseClaim.Summarize("date,description,amount\nx,meal,0.005");
+    throw new Exception("Fractional cents were accepted");
+}
+catch (FormatException) { }
 
 var tool = ExpenseClaim.CreateSubmissionTool();
 Check(tool.Name == "submit_claim", "Unexpected tool name");

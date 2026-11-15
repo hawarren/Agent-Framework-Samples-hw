@@ -2,6 +2,54 @@
 
 The Agent Framework provides a unified interface for interacting with various AI models and services. This tutorial demonstrates how to connect to four different AI solutions—Azure OpenAI Service, GitHub Models, Azure AI Foundry, and Foundry Local—using the framework's implementations in both .NET (C\#) and Python.
 
+## Agents 07: Process expense claims
+
+This C# proof of concept follows [Develop an Azure AI chat agent with the Microsoft Agent Framework SDK](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/07-agent-framework.md). It reads the exercise's expense data, asks what to do, and uses an Agent Framework agent with a local `submit_claim` tool. The tool **only prints** an email; it does not send one.
+
+### Prerequisites and costs
+
+- .NET 10 SDK, Azure CLI, VS Code with the Microsoft Foundry Toolkit extension, and an Azure subscription with permission to create a Foundry project and deploy a model.
+- A Foundry project, a deployed `gpt-4.1` model with quota, and an identity permitted to use the deployment. Model deployment and inference can incur charges; check [pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/) and quota for your region. Each live run sends the prompt and expense data to Azure. Use only non-sensitive test data.
+
+### Setup and run
+
+1. In VS Code, install **Foundry Toolkit**, sign in, and select **Create Project** under Microsoft Foundry Resources. Choose the subscription and resource group, name the project, and wait for deployment.
+2. Open the model catalog, deploy `gpt-4.1` as **Global Standard** (or **Standard** if unavailable), and copy the **project endpoint** from the Toolkit. The endpoint is the project URL, not the resource's OpenAI endpoint. Model availability and Toolkit labels may vary.
+3. From the repository root, set the endpoint and deployment name and sign in:
+
+   ```bash
+   export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+   export FOUNDRY_MODEL="gpt-4.1"
+   az login
+   dotnet build 03.ExploerAgentFramework/code_samples/dotNET/05-dotnet-agent-framework-expense-claims/ExpenseClaims.csproj
+   dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-dotnet-agent-framework-expense-claims/ExpenseClaims.csproj
+   ```
+
+   In PowerShell, use `$env:FOUNDRY_PROJECT_ENDPOINT="..."` and `$env:FOUNDRY_MODEL="gpt-4.1"`. The sample uses `AzureCliCredential`. If the deployment has a different name, set `FOUNDRY_MODEL` to that name.
+4. Enter `Submit an expense claim`. Expected output is a simulated email to `expenses@contoso.com`, subject `Expense Claim`, with the taxi, dinner, and hotel items totaling **215.40**, followed by an agent confirmation that no email was sent. The model decides whether to invoke the tool and generates the email body; inspect the actual output rather than assuming it is correct.
+
+Run the offline checks without Azure credentials or charges:
+
+```bash
+dotnet run --project 03.ExploerAgentFramework/code_samples/dotNET/05-dotnet-agent-framework-expense-claims.Tests/ExpenseClaims.Tests.csproj
+```
+
+### Learning outcomes and parity
+
+| Exercise outcome | Status |
+| --- | --- |
+| Create a project and deploy a model using Foundry Toolkit | Steps documented; live Toolkit verification pending |
+| Load expense data and accept user instructions | Implemented; CLI input path checked locally |
+| Create an Agent Framework agent with a simulated email tool | Implemented; direct tool invocation checked offline, live model/tool round trip pending |
+| Submit an itemized claim and confirm it | Sample data totals 215.40 in offline checks; end-to-end live output pending |
+| Clean up resources | Steps below; live verification pending |
+
+Parity remains **pending** until the Toolkit steps and live model/tool output are demonstrated. The sample uses the Foundry project Responses API and an in-process agent rather than creating a persistent portal agent. It calculates totals using decimal arithmetic, but the model can still alter the email or skip the tool. The included parser accepts simple unquoted `date,description,amount` rows with amounts to at most two decimal places; it does not infer a currency or support general CSV quoting. This is not a production expense system or a real email integration. Foundry SDK APIs include preview components and service behavior and quota may change.
+
+### Cleanup
+
+In the Toolkit, refresh resources, expand **Models**, and delete the lab model deployment. Delete the lab-only project and Foundry resource or, if dedicated to the lab, delete its resource group in the Azure portal. If sharing resources, delete only lab assets; deleting the project alone may not remove a deployment on the parent resource.
+
 ## Configuration and Setup
 
 Before running any of the examples, you need to configure your environment variables. The framework uses these variables to connect to the different AI endpoints. Create a `.env` file in the root of your project and populate it with the necessary credentials and endpoints.
