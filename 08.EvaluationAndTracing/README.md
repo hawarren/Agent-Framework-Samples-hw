@@ -6,6 +6,8 @@ Of course. Here is a tutorial based on the content of the file.
 
 This tutorial will guide you through the tools available for evaluating, tracing, and debugging your agents within the Microsoft Agent Framework. A key part of developing robust AI agents is understanding their behavior, and these tools provide the necessary insights.
 
+For Foundry model catalog comparisons and synthetic-data model evaluation, see the separate [Studio 02 walkthrough](./02-model-catalog-evaluation.md). This chapter's DevUI and observability samples focus on inspecting and tracing agent runs.
+
 We will cover two main components:
 
 1.  **DevUI**: A web-based user interface for real-time visualization and debugging of agent sessions.
