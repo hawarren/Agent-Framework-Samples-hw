@@ -208,6 +208,58 @@ var workflow = new WorkflowBuilder(salesagent)
 
 The user's message is constructed with both the image data (as bytes) and the text prompt. The `InProcessExecution.StreamAsync` method initiates the workflow, and the final output is captured from the stream.
 
+#### Exercise parity: customer feedback with Foundry
+
+The [C# feedback sample](./code_samples/dotNET/05.dotnet-agent-framework-workflow-foundry-feedback/) adapts the [Microsoft Learn multi-agent exercise](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/08-agent-framework-multi-agents.md). It sends the original feedback through **summarizer → classifier → action**. The classifier selects Positive, Negative, or Feature request, and the action agent receives both the summary and classification. The final workflow output displays the user message and each agent's response.
+
+| Exercise outcome | C# mapping and verification |
+| --- | --- |
+| Create a Foundry project and deploy gpt-4.1 | Configure the project endpoint and deployment below; requires an Azure subscription. |
+| Create the three agents and run sequential orchestration | `FeedbackPipeline.BuildFoundry` and `Build`; offline checks exercise the actual workflow using fake chat clients. |
+| Collect and display the conversation | `RunAsync` collects the final output; `Display` prints each message. Offline checks cover ordering, context, streamed chunks, and repeat runs. |
+| Observe model responses and clean up | **Pending live verification**: run the opt-in check and review the summary and action, then follow cleanup below. Offline responses are simulated, not evidence of Foundry model behavior. |
+
+**Prerequisites and setup**
+
+1. Install [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), and optionally VS Code with the Microsoft Foundry Toolkit extension. You need an Azure subscription, permission to use a Foundry project and model, and access to a supported region and model quota.
+2. In Foundry Toolkit (or the [Foundry portal](https://ai.azure.com/)), create a Microsoft Foundry project. Deploy **gpt-4.1**, using Global Standard or Standard where available. Copy the **project endpoint**, not the model endpoint. A different Responses API-compatible deployment can be used if gpt-4.1 is unavailable, but its results may differ.
+3. Sign in with `az login` and select the correct subscription with `az account set --subscription <subscription-id>`. Grant the signed-in identity access to the project and model, such as the **Azure AI User** role, according to your organization's policies. The sample uses `AzureCliCredential` and does not read a `.env` file.
+4. From the repository root, configure the endpoint and deployment name in your shell:
+
+   ```bash
+   export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+   export FOUNDRY_MODEL="gpt-4.1"
+   ```
+
+   In PowerShell, use `$env:FOUNDRY_PROJECT_ENDPOINT = "..."` and `$env:FOUNDRY_MODEL = "gpt-4.1"`. The deployment name defaults to `gpt-4.1` if omitted.
+
+5. Restore, build, and run:
+
+   ```bash
+   dotnet build 07.Workflow/code_samples/dotNET/05.dotnet-agent-framework-workflow-foundry-feedback/FeedbackWorkflow.csproj
+   dotnet run --project 07.Workflow/code_samples/dotNET/05.dotnet-agent-framework-workflow-foundry-feedback/FeedbackWorkflow.csproj
+   ```
+
+   To try other feedback, append it as a quoted argument after `--`, for example `-- "Support resolved my issue quickly."`.
+
+**Validation and expected outcomes**
+
+Run the deterministic checks without Azure credentials or model calls:
+
+```bash
+dotnet run --project 07.Workflow/code_samples/dotNET/05.dotnet-agent-framework-workflow-foundry-feedback-checks/FeedbackWorkflowChecks.csproj
+```
+
+They print a simulated transcript and `Offline workflow checks passed.` With Azure configured, explicitly opt in to a billable live check:
+
+```bash
+dotnet run --project 07.Workflow/code_samples/dotNET/05.dotnet-agent-framework-workflow-foundry-feedback-checks/FeedbackWorkflowChecks.csproj -- --live
+```
+
+For the default dashboard feedback, expect four messages: the user feedback, a neutral one-sentence dark-mode summary, `Feature request`, and an action such as adding dark mode to the product backlog. The live check verifies nonempty responses and the classification; manually review the summary and action. Model responses are nondeterministic, so exact wording and classification are not guaranteed. The .NET sample uses the Foundry Responses API and local agent definitions rather than the exercise's Python SDK; it does not create named portal agents.
+
+**Costs and cleanup:** Foundry deployment and model usage can incur charges; each workflow invokes the model three times, with later calls including conversation history. Consult [Foundry pricing](https://azure.microsoft.com/pricing/details/ai-foundry/) and your deployment's pricing before running. Do not send sensitive customer data without appropriate authorization. Delete the model deployment in Foundry Toolkit or the portal when finished. If you created a dedicated resource group for the exercise, delete it in the Azure portal only after confirming it contains no resources you need; deleting it removes all its resources. Unset the environment variables when finished.
+
 ### Case 3: Concurrent Workflow
 
 This pattern is used when tasks can be performed simultaneously to save time. It involves a "fan-out" to multiple agents and a "fan-in" to aggregate the results.
