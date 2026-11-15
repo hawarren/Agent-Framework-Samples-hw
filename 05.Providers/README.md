@@ -177,3 +177,13 @@ For example, a "Travel Planner" agent could delegate tasks by calling a "Flight 
   * **Specialized Expertise:** A generalist agent can consult a specialist agent for deep knowledge in a specific area (e.g., a "General Support" agent calling a "Billing Expert" agent).
 
   * **Collaborative Problem-Solving:** Multiple agents can work together, sharing information and intermediate results to solve a problem that would be too complex for a single agent.
+
+### C# A2A example
+
+The [remote title and outline agents sample](./code_samples/dotNET/02-dotnet-agent-framework-a2a/) demonstrates A2A agent-card discovery, incoming-message handling, and routing a generated title to a remote outline agent. It includes local routing/message tests and setup, cost, cleanup, and parity notes. Live Foundry inference is opt-in and remains unverified until run with a configured project.
+
+| Parity outcome | Status |
+| --- | --- |
+| Discover both remote agents and route the generated title to the outline agent | Implemented; live check pending |
+| Verify routing and incoming-message handling without Azure | Unit tests pass |
+| Demonstrate the complete outcome with Foundry inference | Pending opt-in live validation |
