@@ -7,7 +7,8 @@ using Microsoft.Agents.AI;
 var builder = WebApplication.CreateBuilder(args);
 
 string role = Environment.GetEnvironmentVariable("AGENT_ROLE") ?? "title";
-string publicUrl = Environment.GetEnvironmentVariable("A2A_PUBLIC_URL") ?? "http://localhost:5001";
+string publicUrl = Environment.GetEnvironmentVariable("A2A_PUBLIC_URL")
+    ?? (role == "outline" ? "http://localhost:5002" : "http://localhost:5001");
 string endpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT")
     ?? throw new InvalidOperationException("Set FOUNDRY_PROJECT_ENDPOINT to your Foundry project endpoint.");
 string model = Environment.GetEnvironmentVariable("FOUNDRY_MODEL")
