@@ -1,5 +1,7 @@
 # From Concept to Code: Building Production-Ready Multi-Agent Systems with Microsoft Foundry
 
+For the Agents 06 ContosoPay portal workflow and its deployed C# streaming client, see [SupportTicketWorkflow](./SupportTicketWorkflow/README.md). Its parity and live-validation status are tracked there; the recruitment YAML case below runs locally and is separate.
+
 ![arch](./imgs/multiagents_workflow_arch.png)
 
 **Core Theme**
