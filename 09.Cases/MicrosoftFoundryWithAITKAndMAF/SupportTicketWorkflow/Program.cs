@@ -18,6 +18,7 @@ try
     var responses = project.ProjectOpenAIClient.GetProjectResponsesClientForAgent(
         new AgentReference(name, version), conversation.Id);
 
+    bool finished = false;
     await foreach (var update in responses.CreateResponseStreamingAsync("Start processing support tickets."))
     {
         if (update is StreamingResponseOutputItemDoneUpdate item &&
@@ -29,12 +30,15 @@ try
         {
             var response = await responses.GetResponseAsync(completed.Response.Id);
             Console.WriteLine($"\nResponse completed:\n{response.Value.GetOutputText()}");
+            finished = true;
         }
         else if (update is StreamingResponseErrorUpdate error)
         {
             throw new InvalidOperationException($"Workflow stream failed: {error.Message}");
         }
     }
+    if (!finished)
+        throw new InvalidOperationException("Workflow stream ended without a completed response.");
 }
 finally
 {
