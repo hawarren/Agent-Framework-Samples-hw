@@ -71,6 +71,62 @@ This complements the separate tool-creation samples in this chapter: the agent a
 
 To avoid further charges, delete the project from **Settings > Delete project** in Foundry, or delete its resource group in the Azure portal. Deleting the project also removes the agent and its uploaded data.
 
+## Agents 02: Astronomy assistant with custom functions
+
+This C# lesson adapts [Use a custom function in an AI agent](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/02-agent-custom-tools.md). Allow about 50 minutes.
+
+### Prerequisites and costs
+
+- An Azure subscription with permission to create a Microsoft Foundry project and deploy and use a model, and sufficient regional quota.
+- .NET 10 SDK, Azure CLI, and optionally VS Code with the **Foundry Toolkit** extension.
+- Foundry model deployments and inference can incur charges. Check current regional pricing and quota before deploying; the offline checks do not call Azure.
+
+### Set up and build
+
+1. In Foundry Toolkit, sign in and use **Microsoft Foundry Resources > Create Project** to create a project in your subscription and resource group. Alternatively, create a project in the Foundry portal.
+2. Deploy `gpt-4.1` using Global Standard (or Standard), accepting the default version and quota settings if available. Copy the **project endpoint** from the Toolkit or project overview, and note the deployment name.
+3. Sign in with `az login`. From the repository root, set the project endpoint and model deployment, then build and run the offline checks:
+
+   ```bash
+   export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+   export FOUNDRY_MODEL="gpt-4.1"
+   dotnet build 04.Tools/code_samples/dotNET/msfoundry/07-astronomy-agent/AstronomyAgent.csproj
+   dotnet run --project 04.Tools/code_samples/dotNET/msfoundry/07-astronomy-agent-tests/AstronomyAgent.Tests.csproj
+   ```
+
+   In PowerShell use `$env:FOUNDRY_PROJECT_ENDPOINT="..."` and `$env:FOUNDRY_MODEL="gpt-4.1"`. `DefaultAzureCredential` can use your Azure CLI sign-in; your identity must have permission to use the project and model. The offline checks print `All astronomy offline checks passed.` and need neither credentials nor a deployment.
+
+### Opt-in live exercise
+
+Run the following only when you are ready to send billable requests:
+
+```bash
+cd 04.Tools/code_samples/dotNET/msfoundry/07-astronomy-agent
+dotnet run
+```
+
+Ask `Find me the next event I can see from South America and give me the cost for 5 hours of premium telescope time at normal priority.` The console should show the `next_visible_event` and `calculate_observation_cost` tool markers and an answer using their results. The cost is **$1,875** (5 × $300 × 1.25). Next ask `Generate that information in a report for Bellows College.` The `generate_observation_report` marker should appear, and the answer should identify a `report_<id>.txt` file in the current directory; open it to inspect the observer, event, next event, booking, and cost. Enter `quit` to exit.
+
+The three `AIFunctionFactory` registrations generate tool schemas from the C# signatures and descriptions. Agent Framework executes the requested local functions, associates results with call IDs, and sends them back to the model, including further calls as needed. The session retains context for the follow-up. The offline checks simulate a model requesting both tools, inspect the correlated results, and exercise the report on a subsequent turn; model selection and actual Foundry transport require the opt-in live check.
+
+The event calendar is the exercise's illustrative month/day dataset, **not an authoritative or current ephemeris**. It finds the first matching event on or after the local date in the same year, without wrapping to next year; results and the May 1 example therefore vary by date. Rates are standard $50, advanced $120, and premium $300 per hour; priority multipliers are low 1, normal 1.25, high 1.75, and urgent 2.5. Unknown tiers or priorities and nonpositive hours return an error. The report uses a generated safe filename rather than the source exercise's event-derived filename; the event named in the request and the next event for the location are shown separately.
+
+### Parity mapping and limitations
+
+| Agents 02 outcome | Evidence / status |
+| --- | --- |
+| Set up a Foundry project and deployed model | Setup above; live verification pending |
+| Define event, cost, and report function tools | `AstronomyTools.cs`; deterministic offline checks |
+| Execute and return multiple function calls, retaining follow-up context | Agent Framework and scripted offline checks; live verification pending |
+| Answer the event and cost prompt and write a report | Offline checks cover data, cost, and file creation; live model behavior pending |
+| Create and clean up the exercise agent | This sample uses a local, non-versioned Agent Framework agent backed by the project's Responses API, not a persisted Foundry Prompt Agent version; no agent version is created to delete |
+
+Parity remains **pending** until the opt-in Foundry prompts and resulting report have been observed on an accessible deployment. Model behavior, tool selection, regional availability, and service APIs can change. The sample is a proof of concept; do not use its illustrative data for real observations or bookings.
+
+### Cleanup
+
+Delete the generated `report_<id>.txt` files from the directory in which you ran the application. Delete the model deployment in Foundry Toolkit or the portal, then delete the project or its dedicated resource group in the Azure portal when no longer needed. Do not delete shared resources used by others.
+
 ## Studio 06: Explore Foundry guardrails and content filtering
 
 This exercise follows [Apply guardrails to prevent the output of harmful content](https://github.com/hawarren/mslearn-ai-studio-hw/blob/b702dc2fd9f9411b5eb1f86b9259db6515cd9c48/Instructions/Exercises/06-Explore-content-filters.md). Allow about 25 minutes. Content filters can help mitigate harmful prompts and completions, but they are only one part of a responsible-AI approach.
