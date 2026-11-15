@@ -105,10 +105,12 @@ This lesson follows [Deploy agents to Microsoft Teams and Copilot](https://githu
 4. In the Foundry playground, ask `What are the password requirements for my laptop?`, `What are the core hours for remote employees?`, and `What encryption is required on company laptops?`. Verify the responses against the indexed documents and confirm that the agent cites or otherwise identifies its sources. Save the agent after testing.
 5. Before publishing, set the active agent version to **Always use latest** or select the specific tested version. The published endpoint uses this active version.
 
+Expected results: passwords require at least 12 characters with uppercase and lowercase letters, numbers, and special characters; remote employees must be available weekdays from 9 AM to 3 PM local time; and BitLocker full-disk encryption is required on company laptops. The wording can vary, but answers should agree with the uploaded policies.
+
 ### Publish and test in Teams
 
 1. Open the saved agent and select **Publish** > **Teams and Microsoft Copilot**. Choose direct publishing or download the app package for manual customization/sideloading.
-2. Provide the app display name, three-part app version, short and full descriptions, developer information, and HTTPS privacy and terms URLs. Complete the app package assets as requested by the portal; Teams packages use color and outline PNG icons. Use URLs and branding approved by your organization, not placeholders.
+2. Provide the app display name, three-part app version, short and full descriptions, developer information, and HTTPS privacy and terms URLs. Complete app assets as requested by the portal; a custom Teams manifest uses a 192 × 192 color PNG and a 32 × 32 outline PNG. Use URLs and branding approved by your organization, not placeholders.
 3. For direct publishing, select **Just you** for personal testing or **People in your organization** for tenant-wide discovery. Submit the app. Foundry registers the Teams bot identity for direct publishing; a separate Azure Bot Service resource is not required. Organization distribution requires Microsoft 365 admin approval.
 4. In Teams, find the app under **Your agents** for personal access, or the organization catalog after approval. Install or open it and ask `What are the laptop password requirements?` and `What MFA methods are supported?`. Compare the answers with the Foundry playground. If it does not appear, confirm publishing succeeded and check the tenant's app permission/setup policies.
 
