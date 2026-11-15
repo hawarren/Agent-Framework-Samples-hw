@@ -63,6 +63,7 @@ In PowerShell, use `$env:FOUNDRY_PROJECT_ENDPOINT="..."` and `$env:FOUNDRY_AGENT
 | Enable built-in code interpreter | Attach `system_performance.csv` and request analysis or a chart |
 | Explore the saved agent in VS Code | Foundry Toolkit Agent Builder steps above |
 | Invoke the portal-created agent programmatically from C# | The `GetAgentAsync` and `RunAsync` calls in the linked sample |
+| Agents 05a: publish a grounded agent to Teams and Microsoft 365 Copilot | [Create, publish, and test the enterprise knowledge agent](#agents-05a-publish-a-grounded-agent-to-teams-and-microsoft-365-copilot) |
 | Studio 06: explore default and custom guardrails | Follow the Foundry walkthrough below; portal behavior is documented, but live service verification is pending |
 
 This complements the separate tool-creation samples in this chapter: the agent and its tools are configured in the portal, and the sample only connects to and invokes it. The C# proof of concept prints response text; it does not download generated charts or other sandbox files to the local machine. The Foundry Agent Framework type currently emits the `OPENAI001` evaluation-only diagnostic and may change in a future release. Live service behavior depends on an accessible project, deployed model, configured agent, and available regional quota; no live Azure call is part of the build.
@@ -70,6 +71,72 @@ This complements the separate tool-creation samples in this chapter: the agent a
 ### Cleanup
 
 To avoid further charges, delete the project from **Settings > Delete project** in Foundry, or delete its resource group in the Azure portal. Deleting the project also removes the agent and its uploaded data.
+
+## Agents 05a: Publish a grounded agent to Teams and Microsoft 365 Copilot
+
+This lesson follows [Deploy agents to Microsoft Teams and Copilot](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/05a-m365-teams-integration.md). It focuses on publishing and testing a portal-created agent, not building an agent in code. Allow about 40 minutes. A C# client is not included because it does not demonstrate either publishing flow.
+
+### Prerequisites, permissions, and costs
+
+- An Azure subscription, access to the Microsoft Foundry portal, and permission to create a project, deploy or use a model, and create an agent. Model availability and quota vary by region.
+- A work or school Microsoft 365 account and a Foundry project role. The documented publisher role is **Foundry User** at the project scope; creating the project or deploying a model can require additional Azure permissions. Teams app access and installation also depend on your tenant's Teams app permission and setup policies.
+- Check your tenant's current Microsoft 365 Copilot agent licensing and billing before testing Copilot. A Copilot license is not a universal prerequisite for every agent and tenant configuration; access may instead depend on the user's Microsoft 365 entitlement and pay-as-you-go settings. Do not assume that Teams access alone guarantees Copilot access.
+- Organization-wide distribution requires an administrator to approve the request in the Microsoft 365 admin center. The agent author does not need to be that administrator for the direct publish flow. If tenant policy blocks custom apps or individual publishing, ask your Teams or Microsoft 365 administrator to review the applicable policy.
+- Foundry model inference and file-search storage/indexing may incur Azure charges. Microsoft 365 licensing or pay-as-you-go Copilot charges are separate. Check current Azure pricing, model quota, and tenant licensing before starting; costs depend on region, model, usage, and tenant plan. Microsoft 365 and Teams also process and store publishing data and agent responses, so confirm the resulting data handling meets your organization's policies.
+
+### Create and ground the agent in Foundry
+
+1. Sign in to [Microsoft Foundry](https://ai.azure.com) with an Azure account that has permission to create a project and use a model. Use the current Foundry experience and create a project in a region with an available model deployment.
+2. Create an agent named `enterprise-knowledge-agent` and select an available deployed chat model. Set its instructions to:
+
+   ```text
+   You are an Enterprise Knowledge Assistant for Contoso Corporation.
+
+   Your role:
+   - Answer questions about company policies and procedures
+   - Provide accurate information from uploaded documents
+   - Be professional, helpful, and concise
+   - If you don't know the answer, say so and suggest who to contact
+
+   Always cite your sources when referencing specific policies.
+   ```
+
+3. Save the agent. In its tools or knowledge section, enable file search, upload the [IT security policy](https://raw.githubusercontent.com/MicrosoftLearning/mslearn-ai-agents/main/Labfiles/05a-m365-teams-integration/Python/sample_documents/it_security_policy.txt) and [remote work policy](https://raw.githubusercontent.com/MicrosoftLearning/mslearn-ai-agents/main/Labfiles/05a-m365-teams-integration/Python/sample_documents/remote_work_policy.txt), and wait for indexing to finish.
+4. In the Foundry playground, ask `What are the password requirements for my laptop?`, `What are the core hours for remote employees?`, and `What encryption is required on company laptops?`. Verify the responses against the indexed documents and confirm that the agent cites or otherwise identifies its sources. Save the agent after testing.
+5. Before publishing, set the active agent version to **Always use latest** or select the specific tested version. The published endpoint uses this active version.
+
+Expected results: passwords require at least 12 characters with uppercase and lowercase letters, numbers, and special characters; remote employees must be available weekdays from 9 AM to 3 PM local time; and BitLocker full-disk encryption is required on company laptops. The wording can vary, but answers should agree with the uploaded policies.
+
+### Publish and test in Teams
+
+1. Open the saved agent and select **Publish** > **Teams and Microsoft Copilot**. Choose direct publishing or download the app package for manual customization/sideloading.
+2. Provide the app display name, three-part app version, short and full descriptions, developer information, and HTTPS privacy and terms URLs. Complete app assets as requested by the portal; a custom Teams manifest uses a 192 × 192 color PNG and a 32 × 32 outline PNG. Use URLs and branding approved by your organization, not placeholders.
+3. For direct publishing, select **Just you** for personal testing or **People in your organization** for tenant-wide discovery. Submit the app. Foundry registers the Teams bot identity for direct publishing; a separate Azure Bot Service resource is not required. Organization distribution requires Microsoft 365 admin approval.
+4. In Teams, find the app under **Your agents** for personal access, or the organization catalog after approval. Install or open it and ask `What are the laptop password requirements?` and `What MFA methods are supported?`. Compare the answers with the Foundry playground. If it does not appear, confirm publishing succeeded and check the tenant's app permission/setup policies.
+
+### Publish and test in Microsoft 365 Copilot
+
+The same publish flow can make the agent available in both Teams and Microsoft 365 Copilot. Copilot access depends on the user's tenant licensing and billing configuration; confirm the current eligibility for your tenant rather than assuming a Copilot add-on license is always required.
+
+1. If the app is not already published, use the saved agent's **Publish** > **Teams and Microsoft Copilot** flow and complete the app details as above.
+2. Use **Just you** for a personal test or **People in your organization** for tenant-wide discovery. For organization distribution, an administrator must review and approve the request in the Microsoft 365 admin center before users can find it.
+3. Open Microsoft 365 Copilot with an account whose licensing and billing settings allow agent use. Find the agent under **Your agents** for personal access or under **Built by your org** after approval. Start a conversation with the agent or invoke it by name where supported, then ask `What are the core hours for remote employees?` and `What encryption is required on company laptops?`. Check the answers against the policies.
+4. If the agent is unavailable, confirm the publishing flow completed, the app was approved if organization-scoped, the user's Copilot licensing/billing supports agent use, and tenant app policies permit access. Copilot surfaces and labels can differ by tenant and may change.
+
+### Outcomes, limitations, and verification status
+
+| Outcome | Status |
+| --- | --- |
+| Create a portal agent and ground it in two policy documents | Walkthrough documented; indexing and answer quality require a live Foundry project |
+| Publish and test the agent in Microsoft Teams | Current portal flow documented; publishing, tenant policy, propagation, and live response have not been tested in this environment |
+| Publish and test the agent in Microsoft 365 Copilot | Licensing and approval requirements documented; an eligible tenant and live Copilot test are not available in this environment |
+| Avoid source-lab assumptions that may no longer apply | Foundry portal publishing handles Teams bot registration; a separate Azure Bot Service resource is not a prerequisite in the current direct-publishing flow |
+
+Direct publishing is unavailable for projects with public network access disabled; a separate REST publishing path has different network requirements. The direct-publish scopes are personal access (**Just you**) and tenant-wide availability (**People in your organization**), not selection of individual Teams teams or channels. File uploads and image generation in chat are not supported for agents published to Microsoft 365, though the indexed knowledge used by this lesson is configured on the agent. To update agent behavior, change the active version; its stable endpoint does not require republishing. Portal labels and tenant policies can change; see the [Foundry publishing guide](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot), [network and publishing limitations](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network), and confirm licensing and app policies with your administrator. No live tenant checks were possible here, so this parity item is documented but remains pending until publishing and testing succeed in both surfaces.
+
+### Cleanup
+
+Uninstall the app from Teams (**Apps** > **Manage your apps**) and remove or unpublish it from your organization's app catalog if it was shared or approved tenant-wide. Remove the agent from Microsoft 365 Copilot or ask the administrator to remove its organization listing. Then delete the agent and any lab-only project or Azure resources in Foundry. Deleting only the agent/project may not remove every app installation or organization catalog entry; check the Teams and Microsoft 365 admin centers. If you reused a project, resource group, or Foundry resource, remove only assets created for this lesson.
 
 ## Studio 06: Explore Foundry guardrails and content filtering
 
