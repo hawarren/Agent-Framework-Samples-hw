@@ -129,6 +129,71 @@ In PowerShell, set the same values with `$env:FOUNDRY_OPENAI_ENDPOINT`, `$env:FO
 
 Model catalog availability, portal workflows, policy thresholds, and filter outcomes are service-dependent and may change. The prompt examples may be refused by the model itself, and a stricter filter is not guaranteed to change every answer. The parity item remains pending until the portal steps and observed outcomes are demonstrated against an accessible Foundry deployment.
 
+## Agents 05b: Work IQ workplace intelligence
+
+This C# sample adapts [Work IQ – Workplace intelligence for AI agents](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/05b-work-iq-integration.md). It uses the Foundry project Responses API and a **local** Work IQ MCP server, not the remote MCP example in Providers. Allow approximately 40 minutes.
+
+### Prerequisites and costs
+
+- .NET 10 SDK, Node.js 18 or later, npm, Azure CLI, and a Microsoft Foundry project with a deployed model supporting function calling. Sign in with `az login`; use an account authorized for the project.
+- An organizational Microsoft 365 account with an appropriate base license and Microsoft 365 Copilot license, active email, meetings and Teams data, and tenant administrator approval. Check the [current Work IQ CLI prerequisites](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/work-iq/cli), including any Copilot Studio usage-based billing plan and user assignment requirements, with your administrator.
+- Microsoft 365 Copilot licensing, Copilot Studio usage where applicable, Foundry model tokens and any Azure AI Search resources can incur charges. Check current pricing and your tenant's billing arrangements before running; the sample does not create a Foundry agent version or Search resources.
+- Review the [Work IQ tenant enablement guide](https://github.com/microsoft/work-iq/blob/main/ADMIN-INSTRUCTIONS.md). Admin consent is tenant-wide and requests sensitive delegated permissions including mail, sites, chats and meeting transcripts. An administrator should review the actual consent prompt, scopes, user assignments and tenant policies before approving; do not grant consent merely to run a sample.
+
+Work IQ queries run under the signed-in user's Microsoft 365 permissions and tenant policies, not the Azure CLI identity automatically. Only use an approved account and data. Queries and retrieved workplace content are sent to the Foundry model for synthesis; use an approved project and avoid sharing output, transcripts, or credentials in logs or issues. Retrieved content is untrusted and may contain misleading instructions. Citations, access, coverage and answers are not guaranteed: verify against the original sources.
+
+### Setup and run
+
+1. Install the tested CLI version, review and accept its EULA, and authenticate with the intended organizational account:
+
+   ```bash
+   npm install -g @microsoft/workiq@1.0.1
+   workiq --version
+   workiq accept-eula
+   workiq ask -q "What meetings do I have today?"
+   ```
+
+   If prompted for admin consent, send the consent request to your administrator and retry only after approval. If the CLI reports a license or access error, resolve it with your administrator; an empty answer does not establish that no data exists.
+2. Set `FOUNDRY_PROJECT_ENDPOINT` to the Foundry **project** endpoint (for example `https://<resource>.services.ai.azure.com/api/projects/<project>`) and `FOUNDRY_MODEL` to the deployed model name (defaults to `gpt-4.1`). Set these as environment variables in your shell; do not commit credentials.
+3. From the repository root, build and run:
+
+   ```bash
+   dotnet build 04.Tools/code_samples/dotNET/msfoundry/07-dotnet-work-iq/07-dotnet-work-iq.csproj
+   dotnet run --project 04.Tools/code_samples/dotNET/msfoundry/07-dotnet-work-iq/07-dotnet-work-iq.csproj -- --list-tools
+   dotnet run --project 04.Tools/code_samples/dotNET/msfoundry/07-dotnet-work-iq/07-dotnet-work-iq.csproj
+   ```
+
+   Discovery should include `ask`. The sample allows only this query tool, not EULA, agent enumeration, or mutation tools. It fails closed if the expected tool is absent; the CLI catalog can change. Select a menu option, supply a real topic or time, and enter `0` to exit. Custom queries can follow up on earlier answers in the same session.
+
+### Parity mapping and opt-in live checks
+
+Run the following checks **only** with an approved, licensed tenant and suitable data. Compare the output and cited sources with the underlying Microsoft 365 items; a plausible response alone is not proof of access. Record pass/fail without copying private data into the repository.
+
+| Exercise outcome | Sample / expected live observation |
+| --- | --- |
+| Meeting prep | Option 1: a real meeting topic or time. Check time, attendees, agenda, relevant email and earlier meeting context, decisions and suggested discussion points. |
+| Project status | Option 2: a real project. Check email, Teams and meeting sources, decisions, changes, blockers, next steps and deadlines. |
+| Action items | Option 3: enter a time range or Enter for this week. Check assigned items from notes, email and mentions, deadlines and any prioritization. |
+| Custom workplace questions | Option 4: ask about email, meetings, team activity or shared documents; ask a follow-up and verify citations and context. |
+| Combined Work IQ and Foundry IQ | **Not implemented or verified.** The source exercise asks for indexed Azure AI Search / Foundry IQ, but its supplied agent registers only Work IQ tools. This sample likewise has no Foundry IQ retrieval tool; an index alone does not provide combined retrieval. |
+| Capabilities and experimentation | Review the data access and limitations above; try specific, broad, ambiguous and unavailable-data queries and compare source coverage. |
+
+The four scenario prompts are implemented, but **parity remains pending** until all outcomes, including combined intelligence, are implemented and demonstrated against an accessible tenant and knowledge base. No live tenant scenario was verified in this environment.
+
+For tenant-independent checks, run:
+
+```bash
+dotnet test 04.Tools/code_samples/dotNET/msfoundry/07-dotnet-work-iq.Tests/07-dotnet-work-iq.Tests.csproj
+```
+
+These tests exercise local MCP discovery, tool selection and invocation with a simulated server, plus scenario prompts; they do not prove Microsoft 365 access or model behavior. The published CLI's `--list-tools` discovery was checked locally, but its data access was not.
+
+### Cleanup and troubleshooting
+
+Exit with `0` (or EOF); the local MCP process is disposed. The sample creates no persistent Foundry agent version. Remove the CLI with `npm uninstall -g @microsoft/workiq` if no longer needed, and use `workiq auth logout` as appropriate for the signed-in account. Administrators should review whether to revoke tenant consent or remove assignments only if no other users depend on them. Remove any Azure resources you created specifically for the exercise and check billing.
+
+If the MCP server cannot start, confirm `workiq --version`, Node/npm and PATH, and rerun the direct `workiq ask` check. A missing tool can indicate a changed CLI version. Authentication, admin consent, licensing, conditional access, unavailable data, or model deployment permissions can independently prevent a live check; inspect the specific error rather than assuming success.
+
 ### Cleanup
 
 Delete the model deployment created for this exercise from **Deployments**, then delete any lab-only Foundry project and resource. Alternatively, delete the resource group in the Azure portal if it is dedicated to this exercise. Deleting only the project does not remove model deployments owned by the parent Foundry resource. If you reused a resource group or Foundry resource, remove only the assets created for this exercise.
