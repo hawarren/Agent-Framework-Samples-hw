@@ -34,6 +34,80 @@ The fundamental workflow for creating a RAG agent with a file search capability 
 
 -----
 
+## Foundry IQ: Contoso product agent (Agents 04)
+
+This is the C# counterpart to [Integrate an AI agent with Foundry IQ](https://github.com/hawarren/mslearn-ai-agents-hw/blob/5f58c207928d0dd3963f06066b16bc6c6b0d3ce4/Instructions/Exercises/04-integrate-agent-with-foundry-iq.md). Unlike the file-search example below, Foundry IQ uses an Azure AI Search knowledge base and a portal-configured agent.
+
+### Prerequisites and costs
+
+- An Azure subscription with permission to create a Foundry project and model deployments, AI Search, and a storage account, and to configure their connections. Granting roles may require additional permissions. The signed-in client identity needs access to the project and agent (for example, **Azure AI User** on the project). See [Foundry environment setup](https://learn.microsoft.com/azure/foundry/agents/environment-setup) and [Foundry IQ connection guidance](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect) for current roles and managed-identity requirements.
+- A region supporting Foundry IQ/agentic retrieval and the selected chat and embedding models, with sufficient model quota. Portal labels and preview availability can change; see [region support](https://learn.microsoft.com/azure/search/search-region-support).
+- .NET 10 SDK and Azure CLI. Sign in with `az login` (and `az account set --subscription <subscription-id>` if necessary); the client uses `DefaultAzureCredential`. Set the project endpoint, not an Azure OpenAI deployment endpoint.
+- Search, storage, indexing, agentic retrieval, and model inference can incur charges. Free Search may not be available; Basic is paid. Check [agentic retrieval billing](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable) and your subscription's pricing before provisioning. Preview features can change and have no production SLA.
+
+### Set up the agent and knowledge base
+
+1. In [Foundry](https://ai.azure.com), enable **New Foundry**, create a project such as `agent-iq-lab` in your subscription and resource group, and note its project endpoint. Under **Build > Agents**, create `product-expert-agent` with an available chat model such as `gpt-4.1`. Set and save these instructions:
+
+   ```text
+   You are a helpful AI assistant for Contoso, specializing in outdoor camping and hiking products.
+   You must ALWAYS search the knowledge base to answer questions about our products or product
+   catalog. Provide detailed, accurate information and always cite your sources.
+   If you don't find relevant information in the knowledge base, say so clearly.
+   ```
+
+2. Under **Knowledge > Add > Connect to Foundry IQ**, choose **Connect to an AI Search resource > Create new resource**. Use a globally unique name, the project's subscription, resource group and region, and Free if available or Basic otherwise. The pinned exercise lists the Foundry IQ knowledge-base capability setting as “Pause til next month”; verify the current portal's billing and capability options before choosing. Wait for creation.
+3. Download [the Contoso product ZIP](https://github.com/MicrosoftLearning/mslearn-ai-agents/raw/main/Labfiles/04-integrate-agent-with-foundry-iq/data/contoso-products.zip) and extract its three PDFs. In the [Azure portal](https://portal.azure.com), create a uniquely named storage account in the same subscription, group and region: Blob Storage or Data Lake Storage, Standard performance, locally redundant (LRS). Create the `contosoproducts` container and upload all three PDFs.
+4. On the Search service's **Security + networking > Keys** page, set API access control to **Both** and confirm. In Foundry refresh **Knowledge**, choose **Create a knowledge base > Azure Blob Storage > Connect**, and configure:
+   - Knowledge source `ks-contosoproducts`, description `Contoso product catalog items`, the storage account and `contosoproducts` container.
+   - Authentication **API Key**, content extraction **minimal**, an available embedding deployment such as `text-embedding-3-small`, and a chat deployment such as `gpt-4.1`.
+   - Create the source, select the chat model on the knowledge-base page, keep the remaining defaults, and **Save knowledge base**. Refresh until the source is **active**.
+5. On **Knowledge**, choose **Manage** beside the connection selector. Under **Connected resources**, select the Search service, **Edit authentication**, and save a Search key from its Azure portal **Keys** page. Never put keys in source code or terminal history. This follows the exercise's key-based setup; prefer managed identity and least privilege where supported. Key-based shared access does not enforce per-user document permissions.
+6. Return to **Build > Agents**, open the agent, and add Foundry IQ in its knowledge section, selecting the Search connection and new knowledge base. Save the agent. If configurable, require MCP tool-call approval; approval behavior depends on the portal tool configuration. Approval is separate from Azure authorization.
+7. In the playground, ask `What types of tents does Contoso offer?`, `Tell me about which backpacks are available in XL.`, and `What camping accessories are available?` Check for specific catalog information and source references. Optionally try **Preview agent**. If the source is not active or retrieval fails, check indexing, region, model quota, connection authentication and permissions before continuing.
+
+### Run the C# client
+
+From the repository root, using your own project endpoint and agent name:
+
+```bash
+export FOUNDRY_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+export FOUNDRY_AGENT_NAME="product-expert-agent"
+dotnet build 06.RAGs/code_samples/dotNET/dotnet-agent-framework-msfoundry-iq
+dotnet run --project 06.RAGs/code_samples/dotNET/dotnet-agent-framework-msfoundry-iq
+```
+
+The client retrieves the existing agent by name and calls the Foundry Responses SDK directly, rather than creating a file-search agent. It chains response IDs for context instead of creating the exercise's explicit conversation object. It displays each requested MCP tool, server and arguments; only `yes` or `y` approves, and other input denies. End-of-input exits without submitting an approval. It handles multiple requests and further approval rounds. `history` displays local user/assistant text and `quit` exits; history is not persisted locally. Service-side responses may remain stored according to service retention settings.
+
+### Opt-in live validation
+
+With the resources configured and billing understood, run the client interactively and ask these in order:
+
+1. `What types of outdoor products does Contoso offer?` — approve a search and check for information from the product documents.
+2. `Tell me about the weatherproof features of your tents.` — approve and check the tent catalog.
+3. `What's the difference between your daypacks and expedition backpacks?` — approve and check the backpack guide.
+4. `What camping accessories would you recommend for a weekend hiking trip?` — approve and check the recommendations against the documents.
+5. `How much do those items typically cost?` — check that “those items” refers to the previous answer. Then enter `history` and `quit`.
+
+Also deny a requested search and verify it is not executed, and ask about a product not in the documents to check the agent acknowledges missing evidence. Approvals only appear when the configured tool requires them; do not enable automatic approval to make this check pass. Inspect source references/citations where returned and compare answers with the PDFs. Model answers and citation formatting are not deterministic; text output may not expose every structured citation. If no approval or citation appears, inspect the agent configuration and service response rather than assuming success.
+
+### Exercise parity and limitations
+
+| Exercise outcome | This sample | Status |
+| --- | --- | --- |
+| Project, Search, Blob data, knowledge source and portal agent | Setup above | Pending live verification |
+| Playground retrieval and source references | Three portal queries above | Pending live verification |
+| C# retrieval, approval/denial and conversation context | Client and opt-in queries above | Builds locally; pending live verification |
+| History, missing-evidence behavior and cleanup | Client and instructions above | Pending live verification |
+
+No Azure deployment was available for this change, so the portal flow, retrieval, citations, approval settings and live outcomes have **not** been demonstrated; parity is not complete. The SDK uses a response chain instead of the Python exercise's explicit conversation and only prints returned text, not all structured citation metadata. Runtime/service errors are surfaced to the console rather than automatically retried.
+
+### Cleanup
+
+If the resource group was created solely for this lab, delete it in the Azure portal after checking it contains no shared resources. Otherwise delete only the lab agent, connections, knowledge base and source, Search service, model deployments, storage container/account and any other lab resources you created. Deleting the agent or connection alone does not delete Search or storage. Review remaining resources and charges.
+
+-----
+
 ## 2\. Code Examples
 
 The following examples demonstrate how to build a RAG agent using the Azure AI Agent Framework in both .NET and Python. Both examples will use a file named `demo.md` as the knowledge source.
